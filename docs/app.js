@@ -1,4 +1,4 @@
-// public/app.js
+// doc/app.js - Handles file reading, encryption, and link generation
 
 async function encryptAndUpload() {
     const file = document.getElementById('fileInput').files[0];
@@ -34,9 +34,10 @@ async function encryptAndUpload() {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // The URL structure will be the base Firebase URL + a new "view" page
-            const baseURL = window.location.origin; // e.g., https://your-app.web.app
-            const shareLink = `${baseURL}/file/${fileId}`; 
+            // CORRECTED: The share link must point to the new decryption page with the file ID attached as a URL parameter
+            const baseURL = window.location.origin; 
+            // NOTE: Must include the repository name '/Is-Project-app/' for GitHub Pages
+            const shareLink = `${baseURL}/Is-Project-app/file.html?id=${fileId}`; 
 
             statusDiv.innerHTML = `
                 <span style="color: green;">Success! File stored.</span><br>
@@ -53,6 +54,3 @@ async function encryptAndUpload() {
     // Read the file content as text (simple for this prototype)
     reader.readAsText(file);
 }
-
-// NOTE: You will need to create a second file, 'file.html' (or similar), for the decryption logic!
-// This code is for the UPLOAD side only.
