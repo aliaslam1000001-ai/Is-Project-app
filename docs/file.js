@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decrypt Secure File</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #decryptedContent { white-space: pre-wrap; margin-top: 20px; border: 1px solid #ccc; padding: 15px; background-color: #f0f8ff; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔒 Decrypt Secured Content</h1>
+    <p id="filenameDisplay">Fetching file details...</p>
+
+    <input type="password" id="passphrase" placeholder="Enter Secret Passphrase"><br>
+    <button onclick="decryptFile()">Decrypt & View</button>
+
+    <div id="statusMessage" style="margin-top: 20px;"></div>
+    <div id="decryptedContent"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyBMcG...", 
+        authDomain: "securing-app.firebaseapp.com",
+        projectId: "securing-app",
+        storageBucket: "securing-app.firebasestorage.app",
+        messagingSenderId: "1005545403992",
+        appId: "1:1005545403992:web:eb524658db38b2df7b7c2d",
+        measurementId: "G-H8MVQKP75K"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+
+      // Decryption Logic
+      async function decryptFile() {
+        const passphrase = document.getElementById('passphrase').value;
+        const statusDiv = document.getElementById('statusMessage');
+        const contentDiv = document.getElementById('decryptedContent');
+        statusDiv.innerHTML = 'Attempting decryption...';
+        contentDiv.textContent = ''; // Clear previous content
+
+        if (!passphrase) {
+            statusDiv.innerHTML = '<span class="error">Please enter the passphrase.</span>';
+            return;
+        }
+        
+        // 1. Get the file ID from the URL (e.g., /file.html?id=XYZ)
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileId = urlParams.get('id');
+
+        if (!fileId) {
+            statusDiv.innerHTML = '<span class="error">Error: File ID not found in the URL.</span>';
+            return;
+        }
+
+        try {
+            // 2. Fetch the ciphertext from Firestore
+            const docRef = db.collection('encryptedFiles').doc(fileId);
+            const doc = await docRef.get();
+
+            if (!doc.exists) {
+                statusDiv.innerHTML = '<span class="error">File not found or has been deleted.</span>';
+                return;
+            }
+
+            const data = doc.data();
+            const ciphertext = data.ciphertext;
+
+            // 3. Decrypt the ciphertext using the user-provided key
+            const bytes  = CryptoJS.AES.decrypt(ciphertext, passphrase);
+            const plaintext = bytes.toString(CryptoJS.enc.Utf8);
+            
+            if (plaintext === '' || plaintext.length < 5) { 
+                // Simple check for failed decryption (e.g., incorrect key)
+                statusDiv.innerHTML = '<span class="error">Decryption failed. Incorrect passphrase or corrupted data.</span>';
+                return;
+            }
+
+            // 4. Display or Download the Decrypted Content
+            statusDiv.innerHTML = `<span class="success">Decryption successful!</span>`;
+            contentDiv.textContent = "Decrypted Content:\n\n" + plaintext;
+            
+            // Optional: Auto-download the file
+            const blob = new Blob([plaintext], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = data.filename || `decrypted_file_${fileId}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+        } catch (e) {
+            console.error("Decryption Error:", e);
+            statusDiv.innerHTML = `<span class="error">An internal error occurred during decryption.</span>`;
+        }
+      }
+
+      // Initial check on page load to display filename
+      document.addEventListener('DOMContentLoaded', async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileId = urlParams.get('id');
+        if (fileId) {
+            try {
+                const doc = await db.collection('encryptedFiles').doc(fileId).get();
+                if (doc.exists) {
+                    document.getElementById('filenameDisplay').textContent = `File Name: ${doc.data().filename || 'Unnamed File'}`;
+                } else {
+                    document.getElementById('filenameDisplay').textContent = 'File Name: Not Found';
+                }
+            } catch (e) {
+                document.getElementById('filenameDisplay').textContent = 'File Name: Error Fetching Details';
+            }
+        } else {
+            document.getElementById('filenameDisplay').textContent = 'File ID Missing.';
+        }
+      });
+    </script>
+</body>
+</html>
