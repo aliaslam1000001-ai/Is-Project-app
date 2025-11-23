@@ -4,34 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Share Prototype</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        input[type="file"], input[type="password"], button { margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007bff; color: white; cursor: pointer; }
+        #statusMessage { border: 1px solid #ddd; padding: 15px; margin-top: 20px; background-color: #f9f9f9; border-radius: 4px; }
+    </style>
 </head>
 <body>
     <h1>🔒 Secure File Uploader</h1>
 
-    <input type="file" id="fileInput"><br><br>
-    <input type="password" id="passphrase" placeholder="Enter Secret Passphrase"><br><br>
+    <input type="file" id="fileInput"><br>
+    <input type="password" id="passphrase" placeholder="Enter Secret Passphrase"><br>
     <button onclick="encryptAndUpload()">Upload Securely</button>
 
-    <div id="statusMessage" style="margin-top: 20px;"></div>
+    <div id="statusMessage">Awaiting file selection...</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
+
     <script>
-      // !!! IMPORTANT: REPLACE ALL '...' WITH YOUR ACTUAL FIREBASE CONFIG KEYS !!!
+      // Your web app's Firebase configuration (COPIED FROM FIREBASE CONSOLE)
+      // NOTE: DO NOT CHANGE THE VARIABLE NAMES, ONLY THE VALUES
       const firebaseConfig = {
-        apiKey: "...", 
-        authDomain: "...", 
-        projectId: "your-project-id", 
-        storageBucket: "...", 
-        messagingSenderId: "...", 
-        appId: "..."
+        apiKey: "AIzaSyBMcG...", 
+        authDomain: "securing-app.firebaseapp.com",
+        projectId: "securing-app",
+        storageBucket: "securing-app.firebasestorage.app",
+        messagingSenderId: "1005545403992",
+        appId: "1:1005545403992:web:eb524658db38b2df7b7c2d",
+        measurementId: "G-H8MVQKP75K"
       };
 
-      // Initialize Firebase and Firestore Database
+      // Initialize Firebase App
       firebase.initializeApp(firebaseConfig);
+      
+      // Initialize Firestore and assign it to the 'db' variable for app.js
       const db = firebase.firestore();
     </script>
 
