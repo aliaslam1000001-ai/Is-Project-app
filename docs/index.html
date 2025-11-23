@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Share Prototype</title>
+</head>
+<body>
+    <h1>🔒 Secure File Uploader</h1>
+
+    <input type="file" id="fileInput"><br><br>
+    <input type="password" id="passphrase" placeholder="Enter Secret Passphrase"><br><br>
+    <button onclick="encryptAndUpload()">Upload Securely</button>
+
+    <div id="statusMessage" style="margin-top: 20px;"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+      // !!! IMPORTANT: REPLACE ALL '...' WITH YOUR ACTUAL FIREBASE CONFIG KEYS !!!
+      const firebaseConfig = {
+        apiKey: "...", 
+        authDomain: "...", 
+        projectId: "your-project-id", 
+        storageBucket: "...", 
+        messagingSenderId: "...", 
+        appId: "..."
+      };
+
+      // Initialize Firebase and Firestore Database
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+    </script>
+
+    <script src="app.js"></script>
+</body>
+</html>
