@@ -3,31 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Share Prototype</title>
+    <title>Secure Share Uploader (Light)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        input[type="file"], input[type="password"], button { margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        button { background-color: #007bff; color: white; cursor: pointer; }
-        #statusMessage { border: 1px solid #ddd; padding: 15px; margin-top: 20px; background-color: #f9f9f9; border-radius: 4px; }
+        /* Custom styles for appearance */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Light, subtle gradient background */
+            background: linear-gradient(135deg, #f3f4f6, #ffffff); 
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1f2937;
+        }
+        .upload-button {
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2); /* Soft blue glow */
+        }
+        .upload-button:hover {
+            box-shadow: 0 6px 15px rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
-<body>
-    <h1>🔒 Secure File Uploader</h1>
+<body class="p-4">
 
-    <input type="file" id="fileInput"><br>
-    <input type="password" id="passphrase" placeholder="Enter Secret Passphrase"><br>
-    <button onclick="encryptAndUpload()">Upload Securely</button>
+    <!-- Main Card Container -->
+    <div class="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 md:p-10 space-y-6 border border-gray-100">
+        
+        <h1 class="text-3xl font-extrabold text-gray-900 text-center flex items-center justify-center space-x-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-7 h-7 text-blue-600">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+            <span>Secure File Uploader</span>
+        </h1>
+        <p class="text-center text-sm text-gray-500">Encrypt files locally before uploading to Firebase Storage. Share the link and the passphrase.</p>
 
-    <div id="statusMessage">Awaiting file selection...</div>
+        <!-- Form Section -->
+        <div class="space-y-4">
+            <!-- File Input -->
+            <label for="fileInput" class="block text-sm font-medium text-gray-700">Select File:</label>
+            <input type="file" id="fileInput" class="w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition duration-150 cursor-pointer">
 
+            <!-- Passphrase Input -->
+            <label for="passphrase" class="block text-sm font-medium text-gray-700">Secret Passphrase:</label>
+            <input type="password" id="passphrase" placeholder="Enter a strong, secret key" class="w-full p-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400">
+            
+            <!-- Upload Button -->
+            <button onclick="encryptAndUpload()" class="upload-button w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+                Upload Securely
+            </button>
+        </div>
+
+        <!-- Status Message Box -->
+        <div id="statusMessage" class="min-h-[50px] p-4 text-sm rounded-lg bg-gray-100 border border-gray-300 break-words text-gray-700">
+            Awaiting file selection...
+        </div>
+    </div>
+
+    <!-- 1. External Library: Cryptography (CryptoJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     
+    <!-- 2. External Library: Firebase Compat SDKs (App, Firestore, and Storage) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
 
+    <!-- 3. YOUR Firebase Configuration and Initialization (Compat Syntax) -->
     <script>
       // Your web app's Firebase configuration (COPIED FROM FIREBASE CONSOLE)
-      // NOTE: DO NOT CHANGE THE VARIABLE NAMES, ONLY THE VALUES
+      // NOTE: Replace values with your actual Firebase keys.
       const firebaseConfig = {
         apiKey: "AIzaSyBMcG...", 
         authDomain: "securing-app.firebaseapp.com",
@@ -41,10 +88,12 @@
       // Initialize Firebase App
       firebase.initializeApp(firebaseConfig);
       
-      // Initialize Firestore and assign it to the 'db' variable for app.js
+      // Initialize Firestore (for metadata) and Storage (for large files)
       const db = firebase.firestore();
+      const storage = firebase.storage();
     </script>
 
+    <!-- 4. Your custom application logic -->
     <script src="app.js"></script>
 </body>
 </html>
