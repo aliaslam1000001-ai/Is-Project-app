@@ -4,76 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Decrypt Secure File</title>
-    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles for appearance */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #1f2937;
-        }
-        /* Style the Decrypt button with Blue theme */
-        .decrypt-button {
-            transition: all 0.2s;
-            /* Blue shadow to match upload page */
-            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4); 
-        }
-        .decrypt-button:hover {
-            transform: translateY(-1px);
-        }
-        .success { color: #10b981; font-weight: 600; } /* Keep success green */
-        .error { color: #ef4444; font-weight: 600; }  /* Keep error red */
-        .text-input {
-            appearance: none;
+        .success { color: #10b981; font-weight: 600; } /* Emerald-500 */
+        .error { color: #ef4444; font-weight: 600; } /* Red-500 */
+        /* Style for the pre-formatted text content display */
+        #decryptedTextContent { 
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            background-color: #f3f4f6; /* gray-100 */
+            border: 1px solid #e5e7eb; /* gray-200 */
+            padding: 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin-top: 16px;
         }
     </style>
 </head>
-<body class="p-4">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-lg">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4 text-center">🔒 Decrypt Secured Content</h1>
+        <p id="filenameDisplay" class="text-gray-600 mb-4 text-center">Fetching file details...</p>
 
-    <!-- Main Card Container -->
-    <div class="w-full max-w-sm bg-white rounded-xl shadow-2xl p-8 space-y-6">
-        
-        <h1 class="text-2xl font-bold text-gray-900 text-center flex items-center justify-center space-x-3">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-blue-600">
-                <path fill-rule="evenodd" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" clip-rule="evenodd" />
-            </svg>
-            <span>Decrypt Secured File</span>
-        </h1>
+        <div id="expirationDisplay" class="text-sm text-center text-red-500 mb-4 font-medium"></div>
 
-        <p id="filenameDisplay" class="text-center text-sm font-semibold text-gray-600 border-t border-gray-200 pt-3">Fetching file details...</p>
-
-        <!-- Decryption Form -->
         <div class="space-y-4">
-            <!-- Passphrase Input -->
-            <label for="passphrase" class="block text-sm font-semibold text-gray-700">Access Key:</label>
-            <input type="password" id="passphrase" placeholder="Enter the shared secret key" class="text-input w-full p-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400">
+            <input type="password" id="passphrase" placeholder="Enter Secret Passphrase" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
             
-            <!-- Decrypt Button -->
-            <!-- Changed bg-green-600 to bg-blue-600 and focus to blue-500 -->
-            <button onclick="decryptFile()" class="decrypt-button w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+            <button onclick="decryptFile()" class="w-full py-3 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition duration-150">
                 Decrypt & Download
             </button>
-        </div>
+            
+            <div id="statusMessage" class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">Ready to decrypt.</div>
 
-        <!-- Status Message Box -->
-        <div id="statusMessage" class="min-h-[50px] p-4 text-sm rounded-lg bg-gray-100 border border-gray-300 break-words text-gray-700">
-            Awaiting access key...
+            <div id="decryptedTextContent" class="hidden"></div>
         </div>
-        <div id="decryptedContent" class="hidden"></div>
     </div>
 
-    <!-- External Libraries (Includes Storage, App, Firestore, and Crypto) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
     
-    <!-- YOUR Firebase Configuration (MUST MATCH index.html) -->
     <script>
       // Replace values with your actual Firebase keys
       const firebaseConfig = {
@@ -94,10 +66,13 @@
       async function decryptFile() {
         const passphrase = document.getElementById('passphrase').value;
         const statusDiv = document.getElementById('statusMessage');
+        const contentDiv = document.getElementById('decryptedTextContent');
         statusDiv.innerHTML = 'Attempting decryption...';
+        contentDiv.textContent = ''; 
+        contentDiv.classList.add('hidden');
 
         if (!passphrase) {
-            statusDiv.innerHTML = '<span class="error">ERROR: Access key required.</span>';
+            statusDiv.innerHTML = '<span class="error">Please enter the passphrase.</span>';
             return;
         }
         
@@ -105,71 +80,117 @@
         const fileId = urlParams.get('id');
 
         if (!fileId) {
-            statusDiv.innerHTML = '<span class="error">ERROR: File ID missing from URL.</span>';
+            statusDiv.innerHTML = '<span class="error">Error: File ID not found in the URL.</span>';
             return;
         }
 
         try {
-            // 1. Fetch the metadata (which contains the Storage URL) from Firestore
+            // 1. Fetch the metadata from Firestore
             const docRef = db.collection('encryptedFiles').doc(fileId);
             const doc = await docRef.get();
 
             if (!doc.exists) {
-                statusDiv.innerHTML = '<span class="error">ERROR: File not found or has been purged.</span>';
+                statusDiv.innerHTML = '<span class="error">File not found or has been deleted.</span>';
                 return;
             }
 
             const data = doc.data();
-            const storageUrl = data.storageUrl; 
-
-            // 2. Fetch the encrypted file content from the Storage URL
-            const response = await fetch(storageUrl);
-            const ciphertext = await response.text();
+            const mode = data.mode || 'file'; // Default to 'file' if mode not present
+            let ciphertext;
             
-            // 3. Decrypt the ciphertext using the user-provided key
+            // Check for expiration
+            if (data.expirationTimestamp && data.expirationTimestamp < Date.now()) {
+                statusDiv.innerHTML = '<span class="error">This file has expired and is no longer available.</span>';
+                return;
+            }
+
+            // 2. Fetch the ciphertext based on mode
+            if (mode === 'file') {
+                statusDiv.innerHTML = 'Fetching encrypted file from cloud storage...';
+                const response = await fetch(data.storageUrl);
+                ciphertext = await response.text();
+            } else { // mode === 'text'
+                statusDiv.innerHTML = 'Fetching encrypted message from database...';
+                ciphertext = data.ciphertext;
+                if (!ciphertext) {
+                    throw new Error("Ciphertext missing for text mode.");
+                }
+            }
+            
+            // 3. Decrypt the ciphertext
             const bytes  = CryptoJS.AES.decrypt(ciphertext, passphrase);
             const plaintext = bytes.toString(CryptoJS.enc.Utf8);
             
             if (plaintext === '' || plaintext.length < 5) { 
                 // Check for failed decryption (e.g., incorrect key)
-                statusDiv.innerHTML = '<span class="error">ACCESS DENIED: Incorrect key or corrupted data.</span>';
+                statusDiv.innerHTML = '<span class="error">Decryption failed. Incorrect passphrase or corrupted data.</span>';
                 return;
             }
-
-            // 4. Trigger Automatic Download
-            statusDiv.innerHTML = `<span class="success">ACCESS GRANTED: File downloaded automatically.</span>`;
             
-            const blob = new Blob([plaintext], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = data.filename || `decrypted_file_${fileId}.txt`;
-            a.click();
-            URL.revokeObjectURL(url);
+            // 4. Handle output based on mode
+            if (mode === 'file') {
+                // Trigger Automatic Download (NO LONGER SHOWS RAW CONTENT)
+                statusDiv.innerHTML = `<span class="success">Decryption successful! The file has been downloaded automatically.</span>`;
+                
+                const blob = new Blob([plaintext], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = data.filename || `decrypted_file_${fileId}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else { // mode === 'text'
+                // Display the decrypted text content
+                statusDiv.innerHTML = `<span class="success">Decryption successful! The message is displayed below.</span>`;
+                contentDiv.textContent = plaintext;
+                contentDiv.classList.remove('hidden');
+            }
             
         } catch (e) {
             console.error("Decryption Error:", e);
-            statusDiv.innerHTML = `<span class="error">SYSTEM ERROR: Check browser console for network faults.</span>`;
+            statusDiv.innerHTML = `<span class="error">An internal error occurred during decryption. Check browser console for errors.</span>`;
         }
       }
 
-      // Initial check on page load to display filename
+      // Initial check on page load to display filename and expiration
       document.addEventListener('DOMContentLoaded', async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const fileId = urlParams.get('id');
+        const expirationDisplay = document.getElementById('expirationDisplay');
+
         if (fileId) {
             try {
                 const doc = await db.collection('encryptedFiles').doc(fileId).get();
                 if (doc.exists) {
-                    document.getElementById('filenameDisplay').textContent = `FILE ID: ${fileId} | NAME: ${doc.data().filename || 'UNNAMED'}`;
+                    const data = doc.data();
+                    document.getElementById('filenameDisplay').textContent = `File/Message Name: ${data.filename || 'Unnamed Content'}`;
+                    
+                    // Display expiration status
+                    if (data.expirationTimestamp) {
+                        const now = Date.now();
+                        const expiresAt = data.expirationTimestamp;
+                        if (expiresAt < now) {
+                            expirationDisplay.textContent = 'Status: EXPIRED and should be deleted.';
+                        } else {
+                            const remaining = expiresAt - now;
+                            const remainingHours = Math.ceil(remaining / (1000 * 60 * 60));
+                            expirationDisplay.textContent = `Status: Expires in approximately ${remainingHours} hours.`;
+                            expirationDisplay.classList.remove('text-red-500');
+                            expirationDisplay.classList.add('text-green-600');
+                        }
+                    } else {
+                        expirationDisplay.textContent = 'Status: Does not expire (Manual deletion required).';
+                        expirationDisplay.classList.remove('text-red-500');
+                        expirationDisplay.classList.add('text-gray-500');
+                    }
                 } else {
-                    document.getElementById('filenameDisplay').textContent = 'FILE ID: METADATA NOT FOUND';
+                    document.getElementById('filenameDisplay').textContent = 'Content Not Found.';
                 }
             } catch (e) {
-                document.getElementById('filenameDisplay').textContent = 'FILE ID: NETWORK ERROR';
+                document.getElementById('filenameDisplay').textContent = 'Error Fetching Details.';
             }
         } else {
-            document.getElementById('filenameDisplay').textContent = 'FILE ID: MISSING PARAMETER';
+            document.getElementById('filenameDisplay').textContent = 'Content ID Missing.';
         }
       });
     </script>
