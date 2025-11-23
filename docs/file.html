@@ -6,9 +6,12 @@
     <title>Decrypt Secure File</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
-        #decryptedContent { white-space: pre-wrap; margin-top: 20px; border: 1px solid #ccc; padding: 15px; background-color: #f0f8ff; }
+        #decryptedContent { display: none; } /* This hides the raw content display */
+        input[type="password"], button { margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007bff; color: white; cursor: pointer; }
         .success { color: green; font-weight: bold; }
         .error { color: red; font-weight: bold; }
+        #statusMessage { border: 1px solid #ddd; padding: 15px; margin-top: 20px; background-color: #f9f9f9; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -24,8 +27,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
     
     <script>
+      // Replace values with your actual Firebase keys
       const firebaseConfig = {
         apiKey: "AIzaSyBMcG...", 
         authDomain: "securing-app.firebaseapp.com",
@@ -38,6 +43,7 @@
 
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
+      const storage = firebase.storage();
 
       // Decryption Logic
       async function decryptFile() {
@@ -52,7 +58,6 @@
             return;
         }
         
-        // 1. Get the file ID from the URL (e.g., /file.html?id=XYZ)
         const urlParams = new URLSearchParams(window.location.search);
         const fileId = urlParams.get('id');
 
@@ -62,7 +67,7 @@
         }
 
         try {
-            // 2. Fetch the ciphertext from Firestore
+            // 1. Fetch the metadata (which contains the Storage URL) from Firestore
             const docRef = db.collection('encryptedFiles').doc(fileId);
             const doc = await docRef.get();
 
@@ -72,23 +77,25 @@
             }
 
             const data = doc.data();
-            const ciphertext = data.ciphertext;
+            const storageUrl = data.storageUrl; 
 
+            // 2. Fetch the encrypted file content from the Storage URL
+            const response = await fetch(storageUrl);
+            const ciphertext = await response.text();
+            
             // 3. Decrypt the ciphertext using the user-provided key
             const bytes  = CryptoJS.AES.decrypt(ciphertext, passphrase);
             const plaintext = bytes.toString(CryptoJS.enc.Utf8);
             
             if (plaintext === '' || plaintext.length < 5) { 
-                // Simple check for failed decryption (e.g., incorrect key)
+                // Check for failed decryption (e.g., incorrect key)
                 statusDiv.innerHTML = '<span class="error">Decryption failed. Incorrect passphrase or corrupted data.</span>';
                 return;
             }
 
-            // 4. Display or Download the Decrypted Content
-            statusDiv.innerHTML = `<span class="success">Decryption successful!</span>`;
-            contentDiv.textContent = "Decrypted Content:\n\n" + plaintext;
+            // 4. Trigger Automatic Download (NO LONGER SHOWS RAW CONTENT)
+            statusDiv.innerHTML = `<span class="success">Decryption successful! The file has been downloaded automatically.</span>`;
             
-            // Optional: Auto-download the file
             const blob = new Blob([plaintext], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -99,7 +106,7 @@
             
         } catch (e) {
             console.error("Decryption Error:", e);
-            statusDiv.innerHTML = `<span class="error">An internal error occurred during decryption.</span>`;
+            statusDiv.innerHTML = `<span class="error">An internal error occurred during decryption. Check browser console for errors.</span>`;
         }
       }
 
