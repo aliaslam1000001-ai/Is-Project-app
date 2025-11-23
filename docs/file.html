@@ -4,31 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Decrypt Secure File</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        #decryptedContent { display: none; } /* This hides the raw content display */
-        input[type="password"], button { margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        button { background-color: #007bff; color: white; cursor: pointer; }
-        .success { color: green; font-weight: bold; }
-        .error { color: red; font-weight: bold; }
-        #statusMessage { border: 1px solid #ddd; padding: 15px; margin-top: 20px; background-color: #f9f9f9; border-radius: 4px; }
+        /* Custom styles for appearance */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1f2937;
+        }
+        /* Style the Decrypt button with Blue theme */
+        .decrypt-button {
+            transition: all 0.2s;
+            /* Blue shadow to match upload page */
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4); 
+        }
+        .decrypt-button:hover {
+            transform: translateY(-1px);
+        }
+        .success { color: #10b981; font-weight: 600; } /* Keep success green */
+        .error { color: #ef4444; font-weight: 600; }  /* Keep error red */
+        .text-input {
+            appearance: none;
+        }
     </style>
 </head>
-<body>
-    <h1>🔒 Decrypt Secured Content</h1>
-    <p id="filenameDisplay">Fetching file details...</p>
+<body class="p-4">
 
-    <input type="password" id="passphrase" placeholder="Enter Secret Passphrase"><br>
-    <button onclick="decryptFile()">Decrypt & View</button>
+    <!-- Main Card Container -->
+    <div class="w-full max-w-sm bg-white rounded-xl shadow-2xl p-8 space-y-6">
+        
+        <h1 class="text-2xl font-bold text-gray-900 text-center flex items-center justify-center space-x-3">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-blue-600">
+                <path fill-rule="evenodd" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" clip-rule="evenodd" />
+            </svg>
+            <span>Decrypt Secured File</span>
+        </h1>
 
-    <div id="statusMessage" style="margin-top: 20px;"></div>
-    <div id="decryptedContent"></div>
+        <p id="filenameDisplay" class="text-center text-sm font-semibold text-gray-600 border-t border-gray-200 pt-3">Fetching file details...</p>
 
+        <!-- Decryption Form -->
+        <div class="space-y-4">
+            <!-- Passphrase Input -->
+            <label for="passphrase" class="block text-sm font-semibold text-gray-700">Access Key:</label>
+            <input type="password" id="passphrase" placeholder="Enter the shared secret key" class="text-input w-full p-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400">
+            
+            <!-- Decrypt Button -->
+            <!-- Changed bg-green-600 to bg-blue-600 and focus to blue-500 -->
+            <button onclick="decryptFile()" class="decrypt-button w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+                Decrypt & Download
+            </button>
+        </div>
+
+        <!-- Status Message Box -->
+        <div id="statusMessage" class="min-h-[50px] p-4 text-sm rounded-lg bg-gray-100 border border-gray-300 break-words text-gray-700">
+            Awaiting access key...
+        </div>
+        <div id="decryptedContent" class="hidden"></div>
+    </div>
+
+    <!-- External Libraries (Includes Storage, App, Firestore, and Crypto) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
     
+    <!-- YOUR Firebase Configuration (MUST MATCH index.html) -->
     <script>
       // Replace values with your actual Firebase keys
       const firebaseConfig = {
@@ -49,12 +94,10 @@
       async function decryptFile() {
         const passphrase = document.getElementById('passphrase').value;
         const statusDiv = document.getElementById('statusMessage');
-        const contentDiv = document.getElementById('decryptedContent');
         statusDiv.innerHTML = 'Attempting decryption...';
-        contentDiv.textContent = ''; // Clear previous content
 
         if (!passphrase) {
-            statusDiv.innerHTML = '<span class="error">Please enter the passphrase.</span>';
+            statusDiv.innerHTML = '<span class="error">ERROR: Access key required.</span>';
             return;
         }
         
@@ -62,7 +105,7 @@
         const fileId = urlParams.get('id');
 
         if (!fileId) {
-            statusDiv.innerHTML = '<span class="error">Error: File ID not found in the URL.</span>';
+            statusDiv.innerHTML = '<span class="error">ERROR: File ID missing from URL.</span>';
             return;
         }
 
@@ -72,7 +115,7 @@
             const doc = await docRef.get();
 
             if (!doc.exists) {
-                statusDiv.innerHTML = '<span class="error">File not found or has been deleted.</span>';
+                statusDiv.innerHTML = '<span class="error">ERROR: File not found or has been purged.</span>';
                 return;
             }
 
@@ -89,12 +132,12 @@
             
             if (plaintext === '' || plaintext.length < 5) { 
                 // Check for failed decryption (e.g., incorrect key)
-                statusDiv.innerHTML = '<span class="error">Decryption failed. Incorrect passphrase or corrupted data.</span>';
+                statusDiv.innerHTML = '<span class="error">ACCESS DENIED: Incorrect key or corrupted data.</span>';
                 return;
             }
 
-            // 4. Trigger Automatic Download (NO LONGER SHOWS RAW CONTENT)
-            statusDiv.innerHTML = `<span class="success">Decryption successful! The file has been downloaded automatically.</span>`;
+            // 4. Trigger Automatic Download
+            statusDiv.innerHTML = `<span class="success">ACCESS GRANTED: File downloaded automatically.</span>`;
             
             const blob = new Blob([plaintext], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
@@ -106,7 +149,7 @@
             
         } catch (e) {
             console.error("Decryption Error:", e);
-            statusDiv.innerHTML = `<span class="error">An internal error occurred during decryption. Check browser console for errors.</span>`;
+            statusDiv.innerHTML = `<span class="error">SYSTEM ERROR: Check browser console for network faults.</span>`;
         }
       }
 
@@ -118,15 +161,15 @@
             try {
                 const doc = await db.collection('encryptedFiles').doc(fileId).get();
                 if (doc.exists) {
-                    document.getElementById('filenameDisplay').textContent = `File Name: ${doc.data().filename || 'Unnamed File'}`;
+                    document.getElementById('filenameDisplay').textContent = `FILE ID: ${fileId} | NAME: ${doc.data().filename || 'UNNAMED'}`;
                 } else {
-                    document.getElementById('filenameDisplay').textContent = 'File Name: Not Found';
+                    document.getElementById('filenameDisplay').textContent = 'FILE ID: METADATA NOT FOUND';
                 }
             } catch (e) {
-                document.getElementById('filenameDisplay').textContent = 'File Name: Error Fetching Details';
+                document.getElementById('filenameDisplay').textContent = 'FILE ID: NETWORK ERROR';
             }
         } else {
-            document.getElementById('filenameDisplay').textContent = 'File ID Missing.';
+            document.getElementById('filenameDisplay').textContent = 'FILE ID: MISSING PARAMETER';
         }
       });
     </script>
